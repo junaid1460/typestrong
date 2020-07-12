@@ -1,0 +1,28 @@
+{
+  "name": "typestrong",
+  "version": "0.0.1",
+  "description": "Strong typing for typescript",
+  "main": "src/index.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/junaid1460/typestrong.git"
+  },
+  "keywords": [
+    "typescript",
+    "strong"
+  ],
+  "author": "junaid",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/junaid1460/typestrong/issues"
+  },
+  "homepage": "https://github.com/junaid1460/typestrong#readme",
+  "dependencies": {
+    "@babel/core": "^7.10.4",
+    "@babel/parser": "^7.10.4",
+    "@types/node": "^14.0.22"
+  }
+}
