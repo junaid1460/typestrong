@@ -1,4 +1,5 @@
 
+import { map, filter, reduce, sort } from 'iterable'
 
 contract NodeLike {
     value: string;
@@ -10,11 +11,15 @@ struct Node: contract NodeLike {
     type: string;
 
     function (node) GetValue () {
-
+        const getNames = (value: Array<{value: number}>) =>  (
+            | map e => e.value) 
+            | filter e => e > 10
+            | reduce 0, ( value, current => value + current )
+        )
     }
 
     function (node) GetType () { // Mutates
-        node.value = "hello"
+        node.value = "hey 😋"
     }
 }
 
