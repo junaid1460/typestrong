@@ -1,4 +1,4 @@
-import { TokenType } from "./toknizer"
+import { TokenType } from "./tokenizer"
 
 enum RuleType {
   BRANCH
