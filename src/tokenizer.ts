@@ -32,6 +32,9 @@ export enum TokenType {
   SINGLE_QUOTE,
   DOUBLE_QUOTE,
   BACKTICK,
+  UNDERSCORE,
+  XOR,
+  AT
 }
 
 export type Token =  {
@@ -180,6 +183,21 @@ const getTokenType = (value: string) => {
    type: TokenType.BACKTICK,
    value: value
  },
+ '_':  
+  {
+   type: TokenType.BACKTICK,
+   value: value
+ },
+ '@':  
+ {
+  type: TokenType.AT,
+  value: value
+},
+'^':  
+{
+ type: TokenType.XOR,
+ value: value
+},
   }
   const token = (tokenMap as any)[value];
   if(token === undefined) {
