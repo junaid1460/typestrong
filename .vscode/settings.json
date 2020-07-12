@@ -3,5 +3,9 @@
         "source.fixAll": true,
         "source.organizeImports": true
     },
-    "editor.defaultFormatter": "esbenp.prettier-vscode"
+    "[typescript]": {
+        "editor.autoIndent": "full"
+    },
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "typescript.format.enable": true,
 }
