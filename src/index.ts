@@ -1,58 +1,19 @@
-import { readFileSync } from 'fs';
-import { isAlpha, isNumber, popAll } from './utils';
+import { readFileSync } from "fs";
+import { tokenize, TokenType } from "./toknizer";
 
-async function parseFile(file: string) {
-    const fileContent = readFileSync(file).toString()
-    const tokens = lex(fileContent);
-    console.log(Array.from(tokens))
-}
+const fileContent = readFileSync(process.argv[2]).toString()
 
-
-enum LexType {
-    ALPHA,
-    NUM,
-    UNKNOWN,
-    UNDEFINED,
-    END,
-}
-
-function getCharType(char: string): LexType {
-    const isalpha = isAlpha(char);
-    const isnum = isNumber(char);
-    if(isalpha) {
-        return LexType.ALPHA
-    } else if (isnum) {
-        return LexType.NUM
+console.time('Compilation');
+(async () => {
+  await console.log(Array.from(tokenize(fileContent)).map(e => {
+    return {
+      ...e,
+      name: TokenType[e.type]
     }
-    else {
-        return LexType.UNKNOWN
-    }
-}
+  }))
+  debugger
+})().then(
+() => console.timeEnd('Compilation')
+)
 
 
-function* lex(fileContent: string): Generator<{token: string, type: LexType}> {
-    const tokens: string[] = []
-    let lexType = LexType.UNDEFINED;
-    for(const char of fileContent) {
-        const currentCharType = getCharType(char);
-        if (lexType !== currentCharType && tokens.length) {
-            yield {
-                token: tokens.join(''),
-                type: lexType
-            }
-            popAll(tokens)
-        }
-        tokens.push(char)
-        if(currentCharType == LexType.UNKNOWN) {
-            lexType = LexType.UNDEFINED;
-        } else {
-            lexType = currentCharType;
-        }
-    }
-    yield {
-        token: '',
-        type: LexType.END
-    }
-}
-
-const value = parseFile(process.argv[2])
