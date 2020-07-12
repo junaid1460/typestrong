@@ -11,7 +11,6 @@ console.time('Compilation');
       name: TokenType[e.type]
     }
   }))
-  debugger
 })().then(
 () => console.timeEnd('Compilation')
 )
