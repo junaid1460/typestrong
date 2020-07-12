@@ -12,6 +12,7 @@
                 "<node_internals>/**"
             ],
             "program": "${workspaceFolder}/src/index.ts",
+            "args": ["./src/index.ts"],
             "outFiles": [
                 "${workspaceFolder}/build/**/*.js"
             ]

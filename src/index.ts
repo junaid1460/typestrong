@@ -4,7 +4,7 @@ import { isAlpha, isNumber, popAll } from './utils';
 async function parseFile(file: string) {
     const fileContent = readFileSync(file).toString()
     const tokens = lex(fileContent);
-    console.log(Array.from(tokens).filter(e => e.type === LexType.NUM))
+    console.log(Array.from(tokens))
 }
 
 
@@ -55,4 +55,4 @@ function* lex(fileContent: string): Generator<{token: string, type: LexType}> {
     }
 }
 
-const value = parseFile('./src/index.ts')
+const value = parseFile(process.argv[2])
