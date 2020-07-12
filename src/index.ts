@@ -1,5 +1,5 @@
 import { readFileSync } from "fs";
-import { tokenize, TokenType } from "./toknizer";
+import { tokenize, TokenType } from "./tokenizer";
 
 const fileContent = readFileSync(process.argv[2]).toString()
 
