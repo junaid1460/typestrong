@@ -13,12 +13,182 @@ export enum TokenType {
   NL, // new line
   SPACE, // white space
   ESC, // \
-  UNKNOWN // any utf8
+  UNKNOWN, // any utf8
+  GT,
+  LT,
+  EQ,
+  NOT,
+  OR,
+  AND,
+  MUL,
+  DIV,
+  MOD,
+  COLUMN,
+  SEMI,
+  COMMA,
+  QUESTION,
+  SUB,
+  ADD,
+  SINGLE_QUOTE,
+  DOUBLE_QUOTE,
+  BACKTICK,
 }
 
 export type Token =  {
   type: TokenType,
   value: string
+}
+
+
+const getTokenType = (value: string) => {
+  const tokenMap = {
+  '{':  {
+       type: TokenType.OPEN_BLOCK,
+       value: value
+     
+   }
+   , '}':  {
+       type: TokenType.CLOSE_BLOCK,
+       value: value
+     
+   }
+   , '(':  {
+       type: TokenType.OPEN_BRACE,
+       value: value
+     
+   }
+   , ')':  {
+       type: TokenType.CLOSE_BRACE,
+       value: value
+     
+   }
+   , '[':  {
+       type: TokenType.OPEN_BRACKET,
+       value: value
+     
+   }
+   , ']':  {
+       type: TokenType.CLOSE_BRACKET,
+       value: value
+     
+   }
+   , '\n':  {
+       type: TokenType.NL,
+       value: value
+     
+   }
+   , '.':  {
+       type: TokenType.DOT,
+       value: value
+     
+   }
+   , ' ':  {
+       type: TokenType.SPACE,
+       value: value,
+     
+   }
+   , '\\':  {
+       type: TokenType.ESC,
+       value: value
+     
+   }
+   , ':':  {
+       type: TokenType.COLUMN,
+       value: value
+     }
+     
+   , '&':  
+      {
+       type: TokenType.AND,
+       value: value
+     },
+     '|':  
+      {
+       type: TokenType.OR,
+       value: value
+     },
+     '!':  
+      {
+       type: TokenType.NOT,
+       value: value
+     },
+     '>':  
+      {
+       type: TokenType.GT,
+       value: value
+     },
+     '<':  
+      {
+       type: TokenType.LT,
+       value: value
+     },
+     '=':  
+      {
+       type: TokenType.EQ,
+       value: value
+     },
+     '+':  
+      {
+       type: TokenType.ADD,
+       value: value
+     },
+     '-':  
+      {
+       type: TokenType.SUB,
+       value: value
+     },
+     '/':  
+      {
+       type: TokenType.DIV,
+       value: value
+     },
+     '%':  
+      {
+       type: TokenType.MOD,
+       value: value
+     },
+     '*':  
+      {
+       type: TokenType.MUL,
+       value: value
+     },
+     '?':  
+      {
+       type: TokenType.QUESTION,
+       value: value
+     },
+     ',':  
+      {
+       type: TokenType.COMMA,
+       value: value
+     },
+     ';':  
+     {
+      type: TokenType.COMMA,
+      value: value
+    },
+    '"':  
+    {
+     type: TokenType.DOUBLE_QUOTE,
+     value: value
+   },'\'':  
+   {
+    type: TokenType.SINGLE_QUOTE,
+    value: value
+  },'`':  
+  {
+   type: TokenType.BACKTICK,
+   value: value
+ },
+  }
+  const token = (tokenMap as any)[value];
+  if(token === undefined) {
+    return  {
+      type: TokenType.UNKNOWN,
+      value: value
+    }
+  }
+  return token
 }
 
 export function* tokenize(fileContent: string): Generator<Token> {
@@ -35,84 +205,7 @@ export function* tokenize(fileContent: string): Generator<Token> {
           value: basicToken.value
         }
       } else if( basicToken.type === BasicTokenType.UNKNOWN) {
-        
-        switch ( basicToken.value ) {
-          case '{':  {
-            yield {
-              type: TokenType.OPEN_BLOCK,
-              value: basicToken.value
-            }
-            break;
-          }
-          case '}':  {
-            yield {
-              type: TokenType.CLOSE_BLOCK,
-              value: basicToken.value
-            }
-            break;
-          }
-          case '(':  {
-            yield {
-              type: TokenType.OPEN_BRACE,
-              value: basicToken.value
-            }
-            break;
-          }
-
-          case ')':  {
-            yield {
-              type: TokenType.CLOSE_BRACE,
-              value: basicToken.value
-            }
-            break;
-          }
-          case '[':  {
-            yield {
-              type: TokenType.OPEN_BRACKET,
-              value: basicToken.value
-            }
-            break;
-          }
-          case ']':  {
-            yield {
-              type: TokenType.CLOSE_BRACKET,
-              value: basicToken.value
-            }
-            break;
-          }
-          case '\n':  {
-            yield {
-              type: TokenType.NL,
-              value: basicToken.value
-            }
-            break;
-          }
-          case '.':  {
-            yield {
-              type: TokenType.DOT,
-              value: basicToken.value
-            }
-            break;
-          }
-          case ' ':  {
-            yield {
-              type: TokenType.SPACE,
-              value: basicToken.value,
-            }
-            break;
-          }
-          case '\\':  {
-            yield {
-              type: TokenType.ESC,
-              value: basicToken.value
-            }
-            break;
-          }
-          default: yield {
-            type: TokenType.UNKNOWN,
-            value: basicToken.value
-          }
-        }
+        yield getTokenType(basicToken.value)
       }
     }
 }
@@ -141,10 +234,10 @@ function* basicTokens(fileContent: string): Generator<{value: string, type: Basi
     let basicTokenType: BasicTokenType | undefined;
     for(const char of fileContent) {
         const currentCharType = getCharType(char);
-        if (basicTokenType !== currentCharType && tokens.length && basicTokenType) {
+        if (basicTokenType !== currentCharType && tokens.length ) {
             yield {
                 value: tokens.join(''),
-                type: basicTokenType
+                type: basicTokenType!!
             }
             popAll(tokens)
         }
@@ -155,9 +248,9 @@ function* basicTokens(fileContent: string): Generator<{value: string, type: Basi
             basicTokenType = currentCharType;
         }
     }
-    if(tokenize.length && basicTokenType) {
+    if(tokens.length ) {
       yield {
-        type: basicTokenType,
+        type: basicTokenType!!,
         value: tokens.join('')
       }
     }
@@ -166,5 +259,4 @@ function* basicTokens(fileContent: string): Generator<{value: string, type: Basi
         type: BasicTokenType.END
     }
 }
-
 
