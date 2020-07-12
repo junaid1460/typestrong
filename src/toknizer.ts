@@ -16,120 +16,45 @@ export enum TokenType {
   UNKNOWN // any utf8
 }
 
-enum RuleType {
-  BRANCH
-}
-
-enum State {
-  BEGIN,
-  CONTRACT,
-  FUNCTION,
-  STRUCT,
-  DECLARATION,
-}
-
-type BranchRule = {
-  type: RuleType.BRANCH;
-  branches: {
-    to: keyof typeof State,
-    when: {
-      type: TokenType,
-      value: string
-    }
-  }[]
-}
-
-type Rule = BranchRule
-
-type MachineState = {
-  state: State,
-  rules: Rule[]
-}
-
-const stateMachine: MachineState[] = [{
-  state: State.BEGIN,
-  rules: [{
-        branches: [
-          {
-            to: 'CONTRACT',
-            when: {
-              type: TokenType.NAME,
-              value: 'contract'
-            }
-          },
-          {       
-            to: 'FUNCTION',
-            when: {
-              type: TokenType.NAME,
-              value: 'function'
-            }
-          },
-          {
-            to: 'STRUCT',
-            when: {
-              type: TokenType.NAME,
-              value: 'struct'
-            }
-          },
-          {  
-            to: 'DECLARATION',
-            when: {
-              type: TokenType.NAME,
-              value: 'const'
-            }
-          },
-          { 
-            to: 'DECLARATION',
-            when: {
-              type: TokenType.NAME,
-              value: 'let'
-            }
-          },
-      ],
-        type: RuleType.BRANCH
-    }]
-}]
-
-
-type Token =  {
+export type Token =  {
   type: TokenType,
   value: string
 }
 
 export function* tokenize(fileContent: string): Generator<Token> {
-    const tokens = lex(fileContent);
-    for (const lex of tokens) {
-      if(lex.type === LexType.ALPHA) {
+    const tokens = basicTokens(fileContent);
+    for (const basicToken of tokens) {
+      if(basicToken.type === BasicTokenType.ALPHA) {
         yield {
           type: TokenType.NAME,
-          value: lex.value
+          value: basicToken.value
         }
-      } else if ( lex.type === LexType.NUM ) {
+      } else if ( basicToken.type === BasicTokenType.NUM ) {
         yield  {
           type: TokenType.NUMBER,
-          value: lex.value
+          value: basicToken.value
         }
-      } else if( lex.type === LexType.UNKNOWN) {
+      } else if( basicToken.type === BasicTokenType.UNKNOWN) {
         
-        switch ( lex.value ) {
+        switch ( basicToken.value ) {
           case '{':  {
             yield {
               type: TokenType.OPEN_BLOCK,
-              value: lex.value
+              value: basicToken.value
             }
             break;
           }
           case '}':  {
             yield {
               type: TokenType.CLOSE_BLOCK,
-              value: lex.value
+              value: basicToken.value
             }
             break;
           }
           case '(':  {
             yield {
               type: TokenType.OPEN_BRACE,
-              value: lex.value
+              value: basicToken.value
             }
             break;
           }
@@ -137,55 +62,55 @@ export function* tokenize(fileContent: string): Generator<Token> {
           case ')':  {
             yield {
               type: TokenType.CLOSE_BRACE,
-              value: lex.value
+              value: basicToken.value
             }
             break;
           }
           case '[':  {
             yield {
               type: TokenType.OPEN_BRACKET,
-              value: lex.value
+              value: basicToken.value
             }
             break;
           }
           case ']':  {
             yield {
               type: TokenType.CLOSE_BRACKET,
-              value: lex.value
+              value: basicToken.value
             }
             break;
           }
           case '\n':  {
             yield {
               type: TokenType.NL,
-              value: lex.value
+              value: basicToken.value
             }
             break;
           }
           case '.':  {
             yield {
               type: TokenType.DOT,
-              value: lex.value
+              value: basicToken.value
             }
             break;
           }
           case ' ':  {
             yield {
               type: TokenType.SPACE,
-              value: lex.value,
+              value: basicToken.value,
             }
             break;
           }
           case '\\':  {
             yield {
               type: TokenType.ESC,
-              value: lex.value
+              value: basicToken.value
             }
             break;
           }
           default: yield {
             type: TokenType.UNKNOWN,
-            value: lex.value
+            value: basicToken.value
           }
         }
       }
@@ -193,52 +118,52 @@ export function* tokenize(fileContent: string): Generator<Token> {
 }
 
 
-enum LexType {
+enum BasicTokenType {
     ALPHA,
     NUM,
     UNKNOWN,
     END,
 }
 
-function getCharType(char: string): LexType | undefined {
+function getCharType(char: string): BasicTokenType | undefined {
     const isalpha = isAlpha(char);
     const isnum = isNumber(char);
     if(isalpha) {
-        return LexType.ALPHA
+        return BasicTokenType.ALPHA
     } else if (isnum) {
-        return LexType.NUM
+        return BasicTokenType.NUM
     }
 }
 
 
-function* lex(fileContent: string): Generator<{value: string, type: LexType}> {
+function* basicTokens(fileContent: string): Generator<{value: string, type: BasicTokenType}> {
     const tokens: string[] = []
-    let lexType: LexType | undefined;
+    let basicTokenType: BasicTokenType | undefined;
     for(const char of fileContent) {
         const currentCharType = getCharType(char);
-        if (lexType !== currentCharType && tokens.length && lexType) {
+        if (basicTokenType !== currentCharType && tokens.length && basicTokenType) {
             yield {
                 value: tokens.join(''),
-                type: lexType
+                type: basicTokenType
             }
             popAll(tokens)
         }
         tokens.push(char)
         if(currentCharType == undefined) {
-            lexType = LexType.UNKNOWN;
+            basicTokenType = BasicTokenType.UNKNOWN;
         } else {
-            lexType = currentCharType;
+            basicTokenType = currentCharType;
         }
     }
-    if(tokenize.length && lexType) {
+    if(tokenize.length && basicTokenType) {
       yield {
-        type: lexType,
+        type: basicTokenType,
         value: tokens.join('')
       }
     }
     yield {
         value: '',
-        type: LexType.END
+        type: BasicTokenType.END
     }
 }
 
