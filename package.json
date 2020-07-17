@@ -23,6 +23,8 @@
   "dependencies": {
     "@babel/core": "^7.10.4",
     "@babel/parser": "^7.10.4",
-    "@types/node": "^14.0.22"
+    "@types/chalk": "^2.2.0",
+    "@types/node": "^14.0.22",
+    "chalk": "^4.1.0"
   }
 }
