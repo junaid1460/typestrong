@@ -34,7 +34,8 @@ export enum TokenType {
   BACKTICK,
   UNDERSCORE,
   XOR,
-  AT
+  AT,
+  ANYTOKEN
 }
 
 export type Token =  {
