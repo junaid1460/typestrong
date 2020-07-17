@@ -1,6 +1,4 @@
 
-import { map, filter, reduce, sort } from 'iterable'
-
 contract NodeLike {
     value: string;
 }
