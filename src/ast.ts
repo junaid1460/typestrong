@@ -253,7 +253,7 @@ export function parse(fileContent: string) {
             }
           }
         }
-        throw new Error(`1: Unexpected token ${token.value} ${TokenType[token.type].toLowerCase()} `)
+        throw new Error(`Unexpected token ${token.value} ${TokenType[token.type].toLowerCase()} `)
       }
 
       default: {
@@ -307,7 +307,7 @@ function handleNonBranchRules(
           action: rule.tokenType === TokenType.ANYTOKEN ?  RuleAction.FORWARD :  RuleAction.STAY_OR_FORWARD,
         }
       } else {
-        throw new Error(`2: Unexpected token "${escape(token.value)}" of type "${TokenType[token.type].toLowerCase()}" `)
+        throw new Error(`Unexpected token "${escape(token.value)}" of type "${TokenType[token.type].toLowerCase()}" `)
       }
     }
 
@@ -324,7 +324,7 @@ function handleNonBranchRules(
           state: getNextSate(rule.stackTo)
         }   
       } else {
-         throw new Error(`2: Unexpected token ${token.value} ${TokenType[token.type].toLowerCase()} `)
+         throw new Error(`Unexpected token ${token.value} ${TokenType[token.type].toLowerCase()} `)
       }
 
     }
