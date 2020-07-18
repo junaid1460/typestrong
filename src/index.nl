@@ -1,6 +1,6 @@
 
 contract NodeLike {
-    value: string;
+  
 }
 
 

@@ -16,17 +16,6 @@ enum RuleType {
   BRANCH_EXIT   // Move forward from a branch rule
 }
 
-enum State {
-  BEGIN,        // Starting state 
-  CONTRACT,     // Contract or interface eg: contract Name {}
-  FUNCTION,     // Evaluate function block eg: function Name () {}
-  STRUCT,       // Evaluate struct block eg: struct Name signs Name {}
-  DECLARATION,  // Value declaration statement eg: const name = 12;
-  VARNAME,      // Valiable name evaluation eg: name123
-  SEPARATORS,   // Spaces and tabs
-  NEWLINE,      // New line char   
-}
-
 /**
  * Simple rule can test against token type and value 
  * the token holds
@@ -51,7 +40,7 @@ type StackRule = {
   ruleType: RuleType.STACK,
   tokenType: TokenType | typeof AnyToken,
   // State to which transition should happen
-  stackTo: State,
+  stackTo: string,
   // If list is empty then comparison won't happen, and considered and success
   values: string[]
 }
@@ -85,148 +74,126 @@ type Rule = BranchRule | SimpleRule | StackRule
 
 type MachineState = {
   // State for which rules are listed
-  state: State,
+  state: string,
 
   // Rules for the state
   // Rules are evaluated left-to-right one-by-one
   rules: Rule[]
 }
 
-const beginState: MachineState = {
-  state: State.BEGIN,
-  rules: [{
-        branches: [
-          {
-            tokenType: TokenType.NAME,
-            values:[ 'contract'],
-            ruleType: RuleType.STACK,
-            stackTo: State.CONTRACT
-          },
-          {       
- 
-            tokenType: TokenType.NAME,
-            values:[ 'function'],
-            ruleType: RuleType.SIMPLE
-          },
-          {
+
+
+const grammar = `
+  begin =>  contract: "contract" || struct: "struct"  || function : "function" || sep;
+  contract => "contract", sep, variable_name , sep, "{", sep, "}";
+  sep =>  SPACE || NL, sep: SPACE || sep: NL || EXIT;
+  variable_name => NAME, NAME || NUMBER || "_" || EXIT;
+`
+
+function parseGrammar() {
+  const states =  grammar
+    .trim()
+    .split(';')
+    .map(line => line.trim())
+    .filter(line => line.indexOf('=>') >= 0)
+    .map(line => {
+      const [stateName, rules] = line.split('=>').map(e => e.trim())
+
+      return {
+        stateName,
+        rules : rules
+          .split(',')
+          .map(unit => {
+            const rules = unit
+              .split('||')
+              .map(instruction => {
+                const [token, conditionalToken]  = instruction.trim().split(":").map(e => e.trim())
+                return {
+                  token,
+                  conditionalToken
+                }
+              })
+              .map(({conditionalToken, token}) =>  {
+                if(token.startsWith('"')) {
+                  return {
+                    ruleType: RuleType.SIMPLE,
+                    tokenType: AnyToken,
+                    values: [token.slice(1, -1)]
+                  } as SimpleRule
+                }
+                else if(token === 'EXIT') {
+                  return {
+                    ruleType: RuleType.BRANCH_EXIT,
+                    tokenType: AnyToken,
+                    values: []
+                  } as BranchExitRule
+                }
+                else if(token === token.toUpperCase()) {
+                    const tokenType: TokenType = TokenType[token as any] as any;
+                    if(tokenType === undefined) {
+                      throw new Error(`Invalid token type "${token}"`)
+                    }
+                    return {
+                      ruleType: RuleType.SIMPLE,
+                      tokenType: tokenType,
+                      values: []
+                    } as SimpleRule
+                } 
+                else  {
+                  if(conditionalToken) {
+                    if(conditionalToken.startsWith('"')) {
+                      return {
+                        ruleType: RuleType.STACK,
+                        stackTo: token as any,
+                        tokenType: AnyToken,
+                        values:[conditionalToken.slice(1, -1)]
+                      }
+                    } else if(conditionalToken.toUpperCase() === conditionalToken) {
+                      const tokenType: TokenType = TokenType[conditionalToken as any] as any;
+                      return {
+                        ruleType: RuleType.STACK,
+                        stackTo: token as any,
+                        tokenType: tokenType,
+                        values:[]
+                      }
+                    } else {
+                      throw new Error('Invalid transition condition')
+                    }
+              
+                  } else {
+                    return {
+                      ruleType: RuleType.STACK,
+                      stackTo: token as any,
+                      tokenType: AnyToken,
+                      values:[]
+                    } as StackRule
+                  }
+                }
+              })
+            if(rules.length > 1) {
+              return {
+                branches: rules,
+                ruleType: RuleType.BRANCH
+              } as BranchRule
+            } else {
+              return rules[0]
+            }
+          })
+      }
+    })
+    const map = states.reduce((reduceTo, current, ) => {
+      return reduceTo.set(current.stateName, {
+        state: current.stateName,
+        rules: current.rules as any
+      })
+    }, new Map<string, MachineState>())
+
+    return map
    
-            tokenType: TokenType.NAME,
-            values:[ 'struct'],
-            ruleType: RuleType.SIMPLE
-          },
-          {  
-            tokenType: TokenType.NAME,
-            values:[ 'const', 'let'],
-            ruleType: RuleType.SIMPLE
-          },
-          {  
-            tokenType: TokenType.NL,
-            values:[],
-            ruleType: RuleType.SIMPLE
-          },
-          {  
-            tokenType: TokenType.SPACE,
-            values:[],
-            ruleType: RuleType.SIMPLE
-          },
-      ],
-        ruleType: RuleType.BRANCH
-    }]
 }
 
+const machineStateMap = parseGrammar()
 
-const varNameState: MachineState = {
-  state: State.VARNAME,
-  rules: [{
-    ruleType: RuleType.SIMPLE,
-    tokenType: TokenType.NAME,
-    values: []
-  }, {
-    ruleType: RuleType.BRANCH,
-    branches: [{
-      tokenType: TokenType.NAME,
-      values: [],
-      ruleType: RuleType.SIMPLE
-    }, {
-      tokenType: TokenType.NUMBER,
-      values: [],
-      ruleType: RuleType.SIMPLE
-    }, {
-      tokenType: TokenType.UNDERSCORE,
-      values: [],
-      ruleType: RuleType.SIMPLE
-    }, {
-      tokenType: AnyToken,
-      values: [],
-      ruleType: RuleType.BRANCH_EXIT
-    }]
-  }]
-}
-
-
-const evaluateVariableName = () =>  ({
-  stackTo: State.VARNAME,
-  tokenType: AnyToken,
-  values:[],
-  ruleType: RuleType.STACK
-} as StackRule)
-
-const evaluateSeparators = () =>  ({
-  stackTo: State.SEPARATORS,
-  tokenType: AnyToken,
-  values:[],
-  ruleType: RuleType.STACK
-} as StackRule)
-
-const evalConstName = (name: string) => {
-  return {
-    tokenType: TokenType.NAME,
-    values:[ name ],
-    ruleType: RuleType.SIMPLE
-  } as SimpleRule
-}
-
-const evalAnyConst = (name: string) => {
-  return {
-    tokenType: AnyToken,
-    values:[ name ],
-    ruleType: RuleType.SIMPLE
-  } as SimpleRule
-}
-
-const contractState: MachineState =  {
-  state: State.CONTRACT,
-  rules: [
-    evalConstName('contract'), evaluateSeparators(), evaluateVariableName(), evaluateSeparators(), evalAnyConst('{'), evaluateSeparators(),
-    evalAnyConst('}')
-  ]
-}
-
-const separatorsState: MachineState = {
-  state: State.SEPARATORS,
-  rules: [{
-    ruleType: RuleType.BRANCH,
-    branches: [{
-      tokenType: TokenType.SPACE,
-      values: [],
-      ruleType: RuleType.SIMPLE
-    }, {
-      tokenType: TokenType.NL,
-      values: [],
-      ruleType: RuleType.SIMPLE
-    }, {
-      tokenType: AnyToken,
-      values: [],
-      ruleType: RuleType.BRANCH_EXIT
-    }]
-  }]
-}
-
-const machineStates: MachineState[] = [beginState, varNameState, separatorsState, contractState]
-const machineStateMap = machineStates.reduce(
-    (stateMap, current) => stateMap.set(current.state, current), 
-    new Map<number, MachineState>()
-)
 
 type MachineStateInstance  = { 
   // index of rule currently being evaluated in following 
@@ -237,7 +204,7 @@ type MachineStateInstance  = {
 }
 
 function getNextSate(
-  nextStateREF: State
+  nextStateREF: string
 ) {
   const nextState = machineStateMap.get(nextStateREF)
 
@@ -254,8 +221,7 @@ export function parse (fileContent: string) {
   const tokens = tokenize(fileContent);
   const states: MachineStateInstance[] = [{
     ruleIndex: 0,
-    machineState: beginState
-    
+    machineState: getNextSate('begin')
   }]
   let tokenStream = tokens.next()
   let count = 0
@@ -269,58 +235,67 @@ export function parse (fileContent: string) {
     const currentMachineState = currentState.machineState
     if (currentState.ruleIndex >= currentState.machineState.rules.length) {
       const popped =  states.pop()
-      log("POPPED", State[popped!!.machineState.state])
+      log("POPPED", popped!!.machineState.state)
       continue tokenIterable;
     }
 
     const currentRule = currentMachineState.rules[currentState.ruleIndex]
 
-    log(count, token.type, escape(token.value), RuleType[currentRule.ruleType], states.length)
+    log(count, token.type, escape(token.value), RuleType[currentRule.ruleType], states.length, "rule no.", currentState.ruleIndex)
 
     mainBranch: switch (currentRule.ruleType) {
       // Main rule check.
       case RuleType.BRANCH: {
-        for (const branchRule of currentRule.branches) {
+        branchRules: for (const branchRule of currentRule.branches) {
           if (branchRule.tokenType === token.type || branchRule.tokenType === AnyToken) {
             const result = handleNonBranchRules(branchRule, token)
+            if(result.action === RuleAction.ERROR) {
+              continue branchRules;
+            }
             if (result.action === RuleAction.STACK) {
-               states.push({
-                 machineState: result.state,
-                 ruleIndex: 0
-               })
-               log('PUSHED', State[result.state.state])
+              if((branchRule as StackRule).stackTo ===  currentMachineState.state) {
+                // don't push for self recursion
+                break mainBranch;
+              } else {
+                states.push({
+                  machineState: result.state,
+                  ruleIndex: 0
+                })
+               log('PUSHED', result.state.state)
+              }
                continue tokenIterable;
-            } else if (result.action === RuleAction.FORWARD) {
+            } else {
               currentState.ruleIndex += 1;
               if( currentState.ruleIndex >= currentState.machineState.rules.length) {
                 const popped = states.pop()
-                log("POPPED", State[popped!!.machineState.state])
+                log("POPPED", popped!!.machineState.state)
                 continue tokenIterable;
               }
               break mainBranch;
-            } else {
-              break mainBranch;
-            }
+            } 
           }
         }
-        throw new Error(`Unexpected token ${token.value} ${TokenType[token.type].toLowerCase()} `)
+        throw new Error(`Unexpected token "${escape(token.value)}" of type "${TokenType[token.type].toLowerCase()}" `)
       }
 
       default: {
         const result = handleNonBranchRules(currentRule, token)
-        if (result.action === RuleAction.STACK) {
+        if(result.action === RuleAction.ERROR) {
+          throw new Error(`Unexpected token "${escape(token.value)}" of type "${TokenType[token.type].toLowerCase()}" `)
+        }
+        else if (result.action === RuleAction.STACK) {
            states.push({
              machineState: result.state,
              ruleIndex: 0
            })
-           log('PUSHED', State[result.state.state])
+           log('PUSHED', result.state.state)
            currentState.ruleIndex += 1;
            continue tokenIterable;
-        } else {
+        }else {
           currentState.ruleIndex += 1;
           if(currentState.ruleIndex >= currentState.machineState.rules.length   ) {
             const popped =  states.pop()
-            log("POPPED", State[popped!!.machineState.state])
+            log("POPPED", popped!!.machineState.state)
             break mainBranch;
           }
         }
@@ -328,7 +303,7 @@ export function parse (fileContent: string) {
 
       
     }
-    log(`evaluated ${ chalk.green(escape(token.value))}`)
+    log(`evaluated ${ chalk.green(escape(token.value))} in ${chalk.yellow(currentMachineState.state)}`)
     tokenStream = tokens.next()
     log(`evaluating ${ chalk.green(escape(tokenStream.value.value))}`)
     count += 1
@@ -338,12 +313,13 @@ export function parse (fileContent: string) {
 enum RuleAction {
   FORWARD,
   STAY_OR_FORWARD,
-  STACK
+  STACK,
+  ERROR
 }
 function handleNonBranchRules(
   rule: SimpleRule | StackRule | BranchExitRule, 
   token: Token,
-): { action: RuleAction.FORWARD | RuleAction.STAY_OR_FORWARD } | { action: RuleAction.STACK , state: MachineState } {
+): { action: RuleAction.FORWARD | RuleAction.STAY_OR_FORWARD | RuleAction.ERROR } | { action: RuleAction.STACK , state: MachineState } {
 
   switch(rule.ruleType) {
     case RuleType.SIMPLE: {
@@ -361,7 +337,9 @@ function handleNonBranchRules(
           action: RuleAction.STAY_OR_FORWARD,
         }
       } else {
-        throw new Error(`Unexpected token "${escape(token.value)}" of type "${TokenType[token.type].toLowerCase()}" `)
+        return {
+          action: RuleAction.ERROR,
+        }
       }
     }
 
@@ -378,7 +356,9 @@ function handleNonBranchRules(
           state: getNextSate(rule.stackTo)
         }   
       } else {
-         throw new Error(`Unexpected token "${escape(token.value)}" of type "${TokenType[token.type].toLowerCase()}" `)
+         return {
+           action: RuleAction.ERROR
+         }
       }
 
     }
@@ -395,8 +375,12 @@ function handleNonBranchRules(
           action: RuleAction.FORWARD
         }
       } else {
-        throw new Error(`Unexpected token "${escape(token.value)}" of type "${TokenType[token.type].toLowerCase()}" `)
+        return {
+          action: RuleAction.ERROR
+        }
       }
     }
   }
 }
+
+
