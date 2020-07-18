@@ -3,6 +3,12 @@ import { Token, tokenize, TokenType } from "./tokenizer"
 const chalk = new Instance({level:3})
 const log = console.log
 
+function escape(str: string) {
+  return str
+      .replace(/\n/gi, '\\n')
+      .replace(/ /gi, '␣')
+}
+
 enum RuleType {
   BRANCH,
   SIMPLE,
