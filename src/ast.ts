@@ -178,9 +178,17 @@ const evaluateSeparators = () =>  ({
   ruleType: RuleType.STACK
 } as StackRule)
 
-const evalConst = (name: string) => {
+const evalConstName = (name: string) => {
   return {
     tokenType: TokenType.NAME,
+    values:[ name ],
+    ruleType: RuleType.SIMPLE
+  } as SimpleRule
+}
+
+const evalAnyConst = (name: string) => {
+  return {
+    tokenType: AnyToken,
     values:[ name ],
     ruleType: RuleType.SIMPLE
   } as SimpleRule
@@ -189,10 +197,8 @@ const evalConst = (name: string) => {
 const contractState: MachineState =  {
   state: State.CONTRACT,
   rules: [
-    evalConst('contract'), 
-    evaluateSeparators(), 
-    evaluateVariableName(),
-    evaluateSeparators(), 
+    evalConstName('contract'), evaluateSeparators(), evaluateVariableName(), evaluateSeparators(), evalAnyConst('{'), evaluateSeparators(),
+    evalAnyConst('}')
   ]
 }
 
@@ -202,6 +208,10 @@ const separatorsState: MachineState = {
     ruleType: RuleType.BRANCH,
     branches: [{
       tokenType: TokenType.SPACE,
+      values: [],
+      ruleType: RuleType.SIMPLE
+    }, {
+      tokenType: TokenType.NL,
       values: [],
       ruleType: RuleType.SIMPLE
     }, {
@@ -257,7 +267,7 @@ export function parse(fileContent: string) {
       throw new Error('Internal compiler error')
     }
     const currentMachineState = currentState.machineState
-    if(currentState.ruleIndex >= currentState.machineState.rules.length   ) {
+    if( currentState.ruleIndex >= currentState.machineState.rules.length   ) {
       const popped =  states.pop()
       log("POPPED", State[popped!!.machineState.state])
       continue tokenIterable;
@@ -311,7 +321,7 @@ export function parse(fileContent: string) {
           if(currentState.ruleIndex >= currentState.machineState.rules.length   ) {
             const popped =  states.pop()
             log("POPPED", State[popped!!.machineState.state])
-            continue tokenIterable;
+            break mainBranch;
           }
         }
       }
@@ -320,6 +330,7 @@ export function parse(fileContent: string) {
     }
     log(`evaluated ${ chalk.green(escape(token.value))}`)
     tokenStream = tokens.next()
+    log(`evaluating ${ chalk.green(escape(tokenStream.value.value))}`)
     count += 1
   }
 }
@@ -337,8 +348,11 @@ function handleNonBranchRules(
   switch(rule.ruleType) {
     case RuleType.SIMPLE: {
       if( 
-        rule.tokenType === AnyToken || 
-        rule.tokenType === token.type && ( 
+        (
+          rule.tokenType === AnyToken || 
+          rule.tokenType === token.type
+        ) 
+        && ( 
           rule.values.length === 0 || 
           rule.values.includes(token.value)
         )
@@ -353,8 +367,8 @@ function handleNonBranchRules(
 
     case RuleType.STACK: {
       if( 
-        rule.tokenType === AnyToken || 
-        rule.tokenType === token.type && ( 
+        (rule.tokenType === AnyToken || 
+        rule.tokenType === token.type) && ( 
           rule.values.length === 0 || 
           rule.values.includes(token.value)
         )
@@ -364,7 +378,7 @@ function handleNonBranchRules(
           state: getNextSate(rule.stackTo)
         }   
       } else {
-         throw new Error(`Unexpected token ${token.value} ${TokenType[token.type].toLowerCase()} `)
+         throw new Error(`Unexpected token "${escape(token.value)}" of type "${TokenType[token.type].toLowerCase()}" `)
       }
 
     }
