@@ -242,7 +242,7 @@ function getNextSate(
   const nextState = machineStateMap.get(nextStateREF)
 
   // This is language parsing error
-  if(!nextState) {
+  if (!nextState) {
     throw new Error('Compiler error')
   }
 
@@ -250,7 +250,7 @@ function getNextSate(
 }
 
 
-export function parse(fileContent: string) {
+export function parse (fileContent: string) {
   const tokens = tokenize(fileContent);
   const states: MachineStateInstance[] = [{
     ruleIndex: 0,
@@ -259,15 +259,15 @@ export function parse(fileContent: string) {
   }]
   let tokenStream = tokens.next()
   let count = 0
-  tokenIterable: while(!tokenStream.done) {
+  tokenIterable: while (!tokenStream.done) {
     const token = tokenStream.value
 
     const currentState = states[states.length - 1];
-    if(!currentState) {
+    if (!currentState) {
       throw new Error('Internal compiler error')
     }
     const currentMachineState = currentState.machineState
-    if( currentState.ruleIndex >= currentState.machineState.rules.length   ) {
+    if (currentState.ruleIndex >= currentState.machineState.rules.length) {
       const popped =  states.pop()
       log("POPPED", State[popped!!.machineState.state])
       continue tokenIterable;
@@ -277,13 +277,13 @@ export function parse(fileContent: string) {
 
     log(count, token.type, escape(token.value), RuleType[currentRule.ruleType], states.length)
 
-    mainBranch: switch(currentRule.ruleType) {
+    mainBranch: switch (currentRule.ruleType) {
       // Main rule check.
       case RuleType.BRANCH: {
-        for(const branchRule of currentRule.branches) {
-          if(branchRule.tokenType === token.type || branchRule.tokenType === AnyToken) {
+        for (const branchRule of currentRule.branches) {
+          if (branchRule.tokenType === token.type || branchRule.tokenType === AnyToken) {
             const result = handleNonBranchRules(branchRule, token)
-            if(result.action === RuleAction.STACK) {
+            if (result.action === RuleAction.STACK) {
                states.push({
                  machineState: result.state,
                  ruleIndex: 0
@@ -308,7 +308,7 @@ export function parse(fileContent: string) {
 
       default: {
         const result = handleNonBranchRules(currentRule, token)
-        if(result.action === RuleAction.STACK) {
+        if (result.action === RuleAction.STACK) {
            states.push({
              machineState: result.state,
              ruleIndex: 0
@@ -347,7 +347,7 @@ function handleNonBranchRules(
 
   switch(rule.ruleType) {
     case RuleType.SIMPLE: {
-      if( 
+      if ( 
         (
           rule.tokenType === AnyToken || 
           rule.tokenType === token.type
@@ -366,7 +366,7 @@ function handleNonBranchRules(
     }
 
     case RuleType.STACK: {
-      if( 
+      if ( 
         (rule.tokenType === AnyToken || 
         rule.tokenType === token.type) && ( 
           rule.values.length === 0 || 
@@ -384,7 +384,7 @@ function handleNonBranchRules(
     }
 
     case RuleType.BRANCH_EXIT: {
-      if( 
+      if ( 
         rule.tokenType === AnyToken || 
         rule.tokenType === token.type && ( 
           rule.values.length === 0 || 
