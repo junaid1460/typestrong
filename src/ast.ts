@@ -1,5 +1,5 @@
 import { Instance } from 'chalk'
-import { Token, tokenize, TokenType } from "./tokenizer"
+import { AnyToken, Token, tokenize, TokenType } from "./tokenizer"
 const chalk = new Instance({level:3})
 const log = console.log
 
@@ -10,48 +10,85 @@ function escape(str: string) {
 }
 
 enum RuleType {
-  BRANCH,
-  SIMPLE,
-  STACK,
+  BRANCH,       // Test a token against multiple rules
+  SIMPLE,       // Simple rule that tests against token type and values
+  STACK,        // State transition while preserving current state 
+  BRANCH_EXIT   // Move forward from a branch rule
 }
 
 enum State {
-  BEGIN,
-  CONTRACT,
-  FUNCTION,
-  STRUCT,
-  DECLARATION,
-  VARNAME,
-  SEPARATORS,
-  NEWLINE,
-
-  FORWARD, // Branch forward to next rule, either next rule in list or pop
-  NOWHERE, // Stay in current state
+  BEGIN,        // Starting state 
+  CONTRACT,     // Contract or interface eg: contract Name {}
+  FUNCTION,     // Evaluate function block eg: function Name () {}
+  STRUCT,       // Evaluate struct block eg: struct Name signs Name {}
+  DECLARATION,  // Value declaration statement eg: const name = 12;
+  VARNAME,      // Valiable name evaluation eg: name123
+  SEPARATORS,   // Spaces and tabs
+  NEWLINE,      // New line char   
 }
 
+/**
+ * Simple rule can test against token type and value 
+ * the token holds
+ */
 type SimpleRule = {
+  // Type mentioning for runtime reference
   ruleType: RuleType.SIMPLE,
-  tokenType: TokenType,
+
+  // if value of -1 then it's considered as * or any
+  tokenType: TokenType | typeof AnyToken,
+
+  // If list is empty then comparison won't happen, and considered and success
   values: string[]
 }
 
+/**
+ * Makes transition to state mentioned in @stackTo 
+ * By stacking the new state over current
+ */
 type StackRule = {
+  // Type mentioning for runtime reference
   ruleType: RuleType.STACK,
-  tokenType: TokenType,
+  tokenType: TokenType | typeof AnyToken,
+  // State to which transition should happen
   stackTo: State,
+  // If list is empty then comparison won't happen, and considered and success
   values: string[]
 }
 
-type BranchRule = {
-  ruleType: RuleType.BRANCH;
-  branches: (SimpleRule | StackRule)[]
+// Exit from a branch
+type BranchExitRule = {
+  // Type mentioning for runtime reference
+  ruleType: RuleType.BRANCH_EXIT,
+
+  // if value of -1 then it's considered as * or any
+  tokenType: TokenType | typeof AnyToken,
+
+  // If list is empty then comparison won't happen, and considered and success
+  values: string[]
 }
+
+
+/**
+ * Evaluates token against rules provided 
+ */
+type BranchRule = {
+  // Type mentioning for runtime reference
+  ruleType: RuleType.BRANCH;
+  // Does not allow to nest branch rule within branch rule
+  branches: (SimpleRule | StackRule | BranchExitRule)[]
+}
+
 
 
 type Rule = BranchRule | SimpleRule | StackRule
 
 type MachineState = {
+  // State for which rules are listed
   state: State,
+
+  // Rules for the state
+  // Rules are evaluated left-to-right one-by-one
   rules: Rule[]
 }
 
@@ -97,12 +134,6 @@ const beginState: MachineState = {
     }]
 }
 
-const evaluateAlphaSequenceStay = (equalsTo?: string) => ({
-  branchTo: State.NOWHERE,
-  tokenType: TokenType.NAME,
-  values: [],
-  ruleType: RuleType.SIMPLE
-} as SimpleRule)
 
 const varNameState: MachineState = {
   state: State.VARNAME,
@@ -125,9 +156,9 @@ const varNameState: MachineState = {
       values: [],
       ruleType: RuleType.SIMPLE
     }, {
-      tokenType: TokenType.ANYTOKEN,
+      tokenType: AnyToken,
       values: [],
-      ruleType: RuleType.SIMPLE
+      ruleType: RuleType.BRANCH_EXIT
     }]
   }]
 }
@@ -135,14 +166,14 @@ const varNameState: MachineState = {
 
 const evaluateVariableName = () =>  ({
   stackTo: State.VARNAME,
-  tokenType: TokenType.ANYTOKEN,
+  tokenType: AnyToken,
   values:[],
   ruleType: RuleType.STACK
 } as StackRule)
 
 const evaluateSeparators = () =>  ({
   stackTo: State.SEPARATORS,
-  tokenType: TokenType.ANYTOKEN,
+  tokenType: AnyToken,
   values:[],
   ruleType: RuleType.STACK
 } as StackRule)
@@ -154,8 +185,6 @@ const evalConst = (name: string) => {
     ruleType: RuleType.SIMPLE
   } as SimpleRule
 }
-
-
 
 const contractState: MachineState =  {
   state: State.CONTRACT,
@@ -176,9 +205,9 @@ const separatorsState: MachineState = {
       values: [],
       ruleType: RuleType.SIMPLE
     }, {
-      tokenType: TokenType.ANYTOKEN,
+      tokenType: AnyToken,
       values: [],
-      ruleType: RuleType.SIMPLE
+      ruleType: RuleType.BRANCH_EXIT
     }]
   }]
 }
@@ -189,8 +218,13 @@ const machineStateMap = machineStates.reduce(
     new Map<number, MachineState>()
 )
 
-
-type MachineStateInstance  = { ruleIndex: number, machineState: MachineState }
+type MachineStateInstance  = { 
+  // index of rule currently being evaluated in following 
+  // Provided machine state
+  ruleIndex: number, 
+  // Machine state
+  machineState: MachineState 
+}
 
 function getNextSate(
   nextStateREF: State
@@ -237,7 +271,7 @@ export function parse(fileContent: string) {
       // Main rule check.
       case RuleType.BRANCH: {
         for(const branchRule of currentRule.branches) {
-          if(branchRule.tokenType === token.type || branchRule.tokenType === TokenType.ANYTOKEN) {
+          if(branchRule.tokenType === token.type || branchRule.tokenType === AnyToken) {
             const result = handleNonBranchRules(branchRule, token)
             if(result.action === RuleAction.STACK) {
                states.push({
@@ -296,21 +330,21 @@ enum RuleAction {
   STACK
 }
 function handleNonBranchRules(
-  rule: SimpleRule | StackRule, 
+  rule: SimpleRule | StackRule | BranchExitRule, 
   token: Token,
 ): { action: RuleAction.FORWARD | RuleAction.STAY_OR_FORWARD } | { action: RuleAction.STACK , state: MachineState } {
 
   switch(rule.ruleType) {
     case RuleType.SIMPLE: {
       if( 
-        rule.tokenType === TokenType.ANYTOKEN || 
+        rule.tokenType === AnyToken || 
         rule.tokenType === token.type && ( 
           rule.values.length === 0 || 
           rule.values.includes(token.value)
         )
       ) {
         return {
-          action: rule.tokenType === TokenType.ANYTOKEN ?  RuleAction.FORWARD :  RuleAction.STAY_OR_FORWARD,
+          action: RuleAction.STAY_OR_FORWARD,
         }
       } else {
         throw new Error(`Unexpected token "${escape(token.value)}" of type "${TokenType[token.type].toLowerCase()}" `)
@@ -319,7 +353,7 @@ function handleNonBranchRules(
 
     case RuleType.STACK: {
       if( 
-        rule.tokenType === TokenType.ANYTOKEN || 
+        rule.tokenType === AnyToken || 
         rule.tokenType === token.type && ( 
           rule.values.length === 0 || 
           rule.values.includes(token.value)
@@ -333,6 +367,22 @@ function handleNonBranchRules(
          throw new Error(`Unexpected token ${token.value} ${TokenType[token.type].toLowerCase()} `)
       }
 
+    }
+
+    case RuleType.BRANCH_EXIT: {
+      if( 
+        rule.tokenType === AnyToken || 
+        rule.tokenType === token.type && ( 
+          rule.values.length === 0 || 
+          rule.values.includes(token.value)
+        )
+      ) {
+        return {
+          action: RuleAction.FORWARD
+        }
+      } else {
+        throw new Error(`Unexpected token "${escape(token.value)}" of type "${TokenType[token.type].toLowerCase()}" `)
+      }
     }
   }
 }

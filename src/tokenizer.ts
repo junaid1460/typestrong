@@ -35,8 +35,9 @@ export enum TokenType {
   UNDERSCORE,
   XOR,
   AT,
-  ANYTOKEN
 }
+
+export const AnyToken = -1
 
 export type Token =  {
   type: TokenType,
