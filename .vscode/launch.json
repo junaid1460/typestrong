@@ -14,8 +14,9 @@
             "program": "${workspaceFolder}/src/index.ts",
             "args": ["./src/index.nl"],
             "outFiles": [
-                "${workspaceFolder}/build/**/*.js"
-            ]
+                "${workspaceFolder}/build/**/*"
+            ],
+            "sourceMaps": true
         }
     ]
 }
