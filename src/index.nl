@@ -1,10 +1,10 @@
 
-contract NodeLike {
+interface NodeLike {
   
 }
 
 
-struct Node: contract NodeLike {
+struct Node implements NodeLike {
     value: string;
     type: string;
 
