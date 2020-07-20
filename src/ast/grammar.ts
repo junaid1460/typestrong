@@ -3,22 +3,27 @@ import { BranchRule, MachineState, OptionalRule, RuleType, SimpleRule, StackRule
 
 export const grammar = `
   begin =>  interface: "interface": @ || struct: "struct": @  || function : "function": @ || optional_sep: @  || ?;
+  
   interface => "interface", sep, variable_name , optional_sep, "{", optional_sep , "}";
+  
   struct =>  "struct", 
               sep, 
               variable_name, 
-              struct_contract: "implements" || ?, 
+              struct_contract_or_body: SPACE, 
               "{",
-              sep || ?, 
+              optional_sep || ?, 
               "}";
 
-  struct_contract => "implements",  sep , variable_name, SPACE : @ ||  NL: @ || ?;
+  struct_contract_or_body =>  struct_contract: "implements" || optional_sep: @ || ?;
+  
+  struct_contract => "implements",  sep , variable_name,  optional_sep;
 
   sep =>  SPACE || NL, SPACE : @ ||  NL: @ || ?;
+
   optional_sep =>  SPACE : @ ||  NL: @ || ?;
+  
   variable_name => NAME || "_", NAME: @ || NUMBER: @ || "_": @ || ?;
 `
-
 
 export function parseGrammar() {
   const states =  grammar
@@ -50,6 +55,7 @@ export function parseGrammar() {
                   return {
                     ruleType: RuleType.SIMPLE,
                     tokenType: AnyToken,
+                    recursion: recursion,
                     values: [token.slice(1, -1)]
                   } as SimpleRule
                 }
