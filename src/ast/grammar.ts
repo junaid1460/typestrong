@@ -2,7 +2,7 @@ import { AnyToken, TokenType } from "../tokenizer"
 import { BranchRule, MachineState, OptionalRule, RuleType, SimpleRule, StackRule } from "./@types"
 
 export const grammar = `
-  begin =>  interface: "interface": @ || struct: "struct": @  || function : "function": @ || NL : @ || SPACE:@ || ?;
+  begin =>  interface: "interface": @ || struct: "struct": @  || function : "function": @ || optional_sep: @  || ?;
   interface => "interface", sep, variable_name , optional_sep, "{", optional_sep , "}";
   struct =>  "struct", 
               sep, 
@@ -12,7 +12,7 @@ export const grammar = `
               sep || ?, 
               "}";
 
-  struct_contract => "implements",  sep , variable_name, optional_sep || ?;
+  struct_contract => "implements",  sep , variable_name, SPACE : @ ||  NL: @ || ?;
 
   sep =>  SPACE || NL, SPACE : @ ||  NL: @ || ?;
   optional_sep =>  SPACE : @ ||  NL: @ || ?;

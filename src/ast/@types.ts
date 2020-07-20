@@ -80,6 +80,10 @@ export type MachineStateInstance  = {
   // index of rule currently being evaluated in following 
   // Provided machine state
   ruleIndex: number, 
+  brachRuleIndex: number;
   // Machine state
-  machineState: MachineState 
+  machineState: MachineState,
+
+  tokensRead: number;
+
 }
