@@ -1,5 +1,5 @@
 import { readFileSync } from "fs";
-import { parse } from "./ast/ast";
+import { parse } from "./ast/parser";
 
 const fileContent = readFileSync(process.argv[2]).toString()
 
