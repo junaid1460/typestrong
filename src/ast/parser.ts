@@ -19,11 +19,13 @@ export function parse (fileContent: string) {
     brachRuleIndex:0
   }]
   let tokenStream = tokens.next()
+  let evaluatedString = ''
   tokenIterable: while (!tokenStream.done) {
     const token = tokenStream.value
 
     const currentState = states[states.length - 1];
     if (!currentState) {
+      log(evaluatedString)
       throw new Error('Internal compiler error')
     }
     const currentMachineState = currentState.machineState
@@ -82,21 +84,21 @@ export function parse (fileContent: string) {
             
             currentState.ruleIndex += 1;
             currentState.brachRuleIndex = 0;
-            if( currentState.ruleIndex >= currentState.machineState.rules.length) {
-              continue tokenIterable;
-            }
             break mainBranch;
           }
           ++currentState.brachRuleIndex
         }
-        throw new Error(`Unexpected token "${escape(token.value)}" of type "${TokenType[token.type].toLowerCase()}" `)
+        
+        throw new Error(`Unexpected token "${escape(token.value)}" of type "${TokenType[token.type].toLowerCase()}" \n ${evaluatedString} `)
       }
     }
 
     ++ currentState.tokensRead
     log(chalk.green('☑'),`${ chalk.green(escape(token.value))} in ${chalk.yellow(currentMachineState.state)}`)
+    evaluatedString += token.value;
     tokenStream = tokens.next()
     log(chalk.yellow('☐'),` ${ chalk.green(escape(tokenStream.value.value))}`, currentState.ruleIndex)
+    log(` ${chalk.yellow(currentMachineState.state)}`)
   }
 }
 
