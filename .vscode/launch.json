@@ -8,14 +8,10 @@
             "type": "node",
             "request": "launch",
             "name": "Run Lexer",
-            "skipFiles": [
-                "<node_internals>/**"
-            ],
+            "skipFiles": ["<node_internals>/**"],
             "program": "${workspaceFolder}/src/index.ts",
-            "args": ["./src/index.nl"],
-            "outFiles": [
-                "${workspaceFolder}/build/**/*"
-            ],
+            "args": ["./src/example.txt"],
+            "outFiles": ["${workspaceFolder}/build/**/*"],
             "sourceMaps": true
         }
     ]
