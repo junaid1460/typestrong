@@ -1,16 +1,14 @@
-import { parseGrammar } from "./grammar";
+import { parseGrammar } from './grammar';
 
-const machineStateMap = parseGrammar()
+const machineStateMap = parseGrammar();
 
-export function getNextSate(
-  nextStateREF: string
-) {
-  const nextState = machineStateMap.get(nextStateREF)
+export function getNextSate(nextStateREF: string) {
+    const nextState = machineStateMap.get(nextStateREF);
 
-  // This is language parsing error
-  if (!nextState) {
-    throw new Error('Compiler error')
-  }
+    // This is language parsing error
+    if (!nextState) {
+        throw new Error('Compiler error');
+    }
 
-  return nextState
+    return nextState;
 }

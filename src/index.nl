@@ -1,9 +1,3 @@
-
-interface NodeLike {
-  
-}
-
-
 struct Node implements NodeLike {
     value: string;
     type: string;
