@@ -23,10 +23,12 @@ export function parse(fileContent: string) {
             machineState: getNextSate('begin'),
             tokensRead: 0,
             brachRuleIndex: 0,
+            ruleIndexChanged: false,
         },
     ];
     let tokenStream = tokens.next();
     let evaluatedString = '';
+
     tokenIterable: while (!tokenStream.done) {
         const token = tokenStream.value;
 
@@ -42,13 +44,15 @@ export function parse(fileContent: string) {
             if (popped?.tokensRead !== 0) {
                 if (newState) newState.brachRuleIndex = 0;
             } else {
-                if (newState) newState.brachRuleIndex += 1;
+                if (newState && !newState.ruleIndexChanged)
+                    newState.brachRuleIndex += 1;
             }
             log(chalk.red('-'), popped!!.machineState.state);
             continue tokenIterable;
         }
 
         const currentRule = currentMachineState.rules[currentState.ruleIndex];
+        currentState.ruleIndexChanged = false;
         mainBranch: switch (currentRule.ruleType) {
             // Main rule check.
             case RuleType.BRANCH: {
@@ -63,6 +67,7 @@ export function parse(fileContent: string) {
                     ) {
                         if (branchRule.ruleType === RuleType.OPTIONAL) {
                             currentState.ruleIndex += 1;
+                            currentState.ruleIndexChanged = true;
                             continue tokenIterable;
                         }
 
@@ -77,6 +82,7 @@ export function parse(fileContent: string) {
                                 ruleIndex: 0,
                                 tokensRead: 0,
                                 brachRuleIndex: 0,
+                                ruleIndexChanged: false,
                             });
                             log(chalk.green('+'), result.state.state);
                             if ((branchRule as StackRule).recursion === true) {
@@ -84,7 +90,9 @@ export function parse(fileContent: string) {
                                 // currentState.brachRuleIndex = 0
                                 continue tokenIterable;
                             }
+                            currentState.brachRuleIndex = 0;
                             currentState.ruleIndex += 1;
+                            currentState.ruleIndexChanged = true;
                             continue tokenIterable;
                         }
                         if (result.action === RuleAction.STAY_OR_FORWARD) {
@@ -95,6 +103,7 @@ export function parse(fileContent: string) {
                         }
 
                         currentState.ruleIndex += 1;
+                        currentState.ruleIndexChanged = true;
                         currentState.brachRuleIndex = 0;
                         break mainBranch;
                     }
@@ -106,7 +115,18 @@ export function parse(fileContent: string) {
                         token.value
                     )}" of type "${TokenType[
                         token.type
-                    ].toLowerCase()}" \n ${evaluatedString} `
+                    ].toLowerCase()}" \n while expected ${currentRule.branches
+                        .map((e) =>
+                            [
+                                TokenType[e.tokenType],
+                                e.ruleType === RuleType.SIMPLE
+                                    ? e.values.join(', ')
+                                    : undefined,
+                            ]
+                                .filter((e) => e)
+                                .join()
+                        )
+                        .join(' or ')} \n  ${evaluatedString} `
                 );
             }
         }
