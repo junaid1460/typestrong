@@ -1,4 +1,5 @@
 import { AnyToken, TokenType } from '../tokenizer';
+import { isAlpha } from '../utils';
 import {
     BranchRule,
     MachineState,
@@ -9,27 +10,36 @@ import {
 } from './@types';
 
 export const grammar = `
-  begin =>  interface: "interface": @ || struct: "struct": @  || function : "function": @ || optional_sep: @  || ?;
+  @begin =>  @interface: interface: @ 
+            || @struct: struct: @  
+            || @function : function: @ 
+            || @const: const: @
+            || @optional_sep: @  
+            || ?;
   
-  interface => "interface", sep, variable_name , optional_sep, "{", optional_sep , "}";
-  
-  struct =>  "struct", 
-              sep, 
-              variable_name, 
-              struct_contract_or_body: SPACE, 
-              "{",
-              optional_sep || ?, 
-              "}";
+  @interface => interface, @sep, @variable_name , @optional_sep, {, @optional_sep , };
 
-  struct_contract_or_body =>  struct_contract: "implements" || optional_sep: @ || ?;
-  
-  struct_contract => "implements",  sep , variable_name,  optional_sep;
+  @const => const, @sep, @variable_name, @optional_sep, "=", @optional_sep, @value;
 
-  sep =>  SPACE || NL, SPACE : @ ||  NL: @ || ?;
-
-  optional_sep =>  SPACE : @ ||  NL: @ || ?;
+  @value =>  string: ";
   
-  variable_name => NAME || "_", NAME: @ || NUMBER: @ || "_": @ || ?;
+  @struct =>  struct, 
+              @sep, 
+              @variable_name, 
+              @struct_contract_or_body: SPACE, 
+              {,
+              @optional_sep || ?, 
+              };
+
+  @struct_contract_or_body =>  @struct_contract: implements || @optional_sep: @ || ?;
+  
+  @struct_contract => implements,  @sep , @variable_name,  @optional_sep;
+
+  @sep =>  SPACE || NL, SPACE : @ ||  NL: @ || ?;
+
+  @optional_sep =>  SPACE : @ ||  NL: @ || ?;
+  
+  @variable_name => NAME || _, NAME: @ || NUMBER: @ || _ : @ || ?;
 `;
 
 export function parseGrammar() {
@@ -62,20 +72,14 @@ export function parseGrammar() {
                             };
                         })
                         .map(({ conditionalToken, token, recursion }) => {
-                            if (token.startsWith('"')) {
-                                return {
-                                    ruleType: RuleType.SIMPLE,
-                                    tokenType: AnyToken,
-                                    recursion: recursion,
-                                    values: [token.slice(1, -1)],
-                                } as SimpleRule;
-                            } else if (token === '?') {
+                            if (token === '?') {
                                 return {
                                     ruleType: RuleType.OPTIONAL,
                                     tokenType: AnyToken,
                                 } as OptionalRule;
                             } else if (
                                 token.length &&
+                                isAlpha(token.replace(/_/gi, '')) &&
                                 token === token.toUpperCase()
                             ) {
                                 const tokenType: TokenType = TokenType[
@@ -92,19 +96,9 @@ export function parseGrammar() {
                                     recursion: recursion,
                                     values: [],
                                 } as SimpleRule;
-                            } else {
+                            } else if (token.startsWith('@')) {
                                 if (conditionalToken) {
-                                    if (conditionalToken.startsWith('"')) {
-                                        return {
-                                            ruleType: RuleType.STACK,
-                                            stackTo: token as any,
-                                            tokenType: AnyToken,
-                                            recursion: recursion,
-                                            values: [
-                                                conditionalToken.slice(1, -1),
-                                            ],
-                                        };
-                                    } else if (
+                                    if (
                                         conditionalToken.toUpperCase() ===
                                         conditionalToken
                                     ) {
@@ -121,9 +115,13 @@ export function parseGrammar() {
 
                                         return data;
                                     } else {
-                                        throw new Error(
-                                            'Invalid transition condition'
-                                        );
+                                        return {
+                                            ruleType: RuleType.STACK,
+                                            stackTo: token as any,
+                                            tokenType: AnyToken,
+                                            recursion: recursion,
+                                            values: [conditionalToken],
+                                        };
                                     }
                                 } else {
                                     const data = {
@@ -136,6 +134,13 @@ export function parseGrammar() {
 
                                     return data;
                                 }
+                            } else {
+                                return {
+                                    ruleType: RuleType.SIMPLE,
+                                    tokenType: AnyToken,
+                                    recursion: recursion,
+                                    values: [token],
+                                } as SimpleRule;
                             }
                         });
                     return {

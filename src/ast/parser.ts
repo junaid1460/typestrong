@@ -20,7 +20,7 @@ export function parse(fileContent: string) {
     const states: MachineStateInstance[] = [
         {
             ruleIndex: 0,
-            machineState: getNextSate('begin'),
+            machineState: getNextSate('@begin'),
             tokensRead: 0,
             brachRuleIndex: 0,
             ruleIndexChanged: false,
