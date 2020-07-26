@@ -81,4 +81,5 @@ export type MachineStateInstance = {
     machineState: MachineState;
 
     tokensRead: number;
+    ruleIndexChanged: boolean;
 };
