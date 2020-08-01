@@ -46,6 +46,7 @@ export function parseGrammar() {
                                 return {
                                     ruleType: RuleType.OPTIONAL,
                                     tokenType: AnyToken,
+                                    value: '',
                                 } as OptionalRule;
                             } else if (
                                 token.length &&
@@ -90,8 +91,8 @@ export function parseGrammar() {
                                             stackTo: token as any,
                                             recursion: recursion,
                                             tokenType: tokenType,
-                                            values: [],
-                                        };
+                                            value: '',
+                                        } as StackRule;
 
                                         return data;
                                     } else {
@@ -100,13 +101,11 @@ export function parseGrammar() {
                                             stackTo: token as any,
                                             tokenType: AnyToken,
                                             recursion: recursion,
-                                            values: [
-                                                conditionalToken.replace(
-                                                    '\\*',
-                                                    '*'
-                                                ),
-                                            ],
-                                        };
+                                            value: conditionalToken.replace(
+                                                '\\*',
+                                                '*'
+                                            ),
+                                        } as StackRule;
                                     }
                                 } else {
                                     throw new Error('Condition is necessary');

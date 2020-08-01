@@ -47,6 +47,7 @@ export type OptionalRule = {
     // Type mentioning for runtime reference
     ruleType: RuleType.OPTIONAL;
     tokenType: TokenType | typeof AnyToken;
+    value: '';
 };
 
 /**
@@ -56,12 +57,12 @@ export type BranchRule = {
     // Type mentioning for runtime reference
     ruleType: RuleType.BRANCH;
     // Does not allow to nest branch rule within branch rule
-    branches: (SimpleRule | StackRule | OptionalRule)[];
+    branches: Rule[];
 
     isOptional: boolean;
 };
 
-export type Rule = BranchRule | SimpleRule | StackRule | OptionalRule;
+export type Rule = SimpleRule | StackRule | OptionalRule;
 
 export type MachineState = {
     // State for which rules are listed
@@ -69,7 +70,7 @@ export type MachineState = {
 
     // Rules for the state
     // Rules are evaluated left-to-right one-by-one
-    rules: Rule[];
+    rules: BranchRule[];
 };
 
 export type MachineStateInstance = {
