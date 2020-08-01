@@ -1,3 +1,4 @@
+import { readFileSync } from 'fs';
 import { AnyToken, TokenType } from '../tokenizer';
 import { isAlpha } from '../utils';
 import {
@@ -9,41 +10,7 @@ import {
     StackRule,
 } from './@types';
 
-export const grammar = `
-  @begin =>  @interface: interface: @ 
-            || @struct: struct: @  
-            || @function : function: @ 
-            || @const: const: @
-            || @optional_sep: @  
-            || ?;
-  
-  @interface => interface, @sep, @variable_name , @optional_sep, {, @optional_sep , };
-
-  @const => const, @sep, @variable_name, @optional_sep, =, @optional_sep, @value;
-
-  @value =>  string: " || char: ' || multiline : \` || number: NUMBER || instance: ALPHA || instance: UNDERSCORE ;
-  
-  @struct =>  struct, 
-              @sep, 
-              @variable_name, 
-              @struct_contract_or_body: SPACE, 
-              {,
-              @optional_sep || ?, 
-              };
-  @string => ", @escape: \\ || * : @ ;
-
-  @escape => \\, *;
-
-  @struct_contract_or_body =>  @struct_contract: implements || @optional_sep: @ || ?;
-  
-  @struct_contract => implements,  @sep , @variable_name,  @optional_sep;
-
-  @sep =>  SPACE || NL, SPACE : @ ||  NL: @ || ?;
-
-  @optional_sep =>  SPACE : @ ||  NL: @ || ?;
-  
-  @variable_name => ALPHA || _, ALPHA: @ || NUMBER: @ || _ : @ || ?;
-`;
+export const grammar = readFileSync(process.argv[3]).toString();
 
 export function parseGrammar() {
     const states = grammar
@@ -101,7 +68,17 @@ export function parseGrammar() {
                                 } as SimpleRule;
                             } else if (token.startsWith('@')) {
                                 if (conditionalToken) {
-                                    if (
+                                    if (conditionalToken === '*') {
+                                        const data = {
+                                            ruleType: RuleType.STACK,
+                                            stackTo: token as any,
+                                            tokenType: AnyToken,
+                                            recursion: recursion,
+                                            values: [],
+                                        } as StackRule;
+
+                                        return data;
+                                    } else if (
                                         conditionalToken.toUpperCase() ===
                                         conditionalToken
                                     ) {
@@ -127,17 +104,17 @@ export function parseGrammar() {
                                         };
                                     }
                                 } else {
-                                    const data = {
-                                        ruleType: RuleType.STACK,
-                                        stackTo: token as any,
+                                    throw new Error('Condition is necessary');
+                                }
+                            } else {
+                                if (token === '*') {
+                                    return {
+                                        ruleType: RuleType.SIMPLE,
                                         tokenType: AnyToken,
                                         recursion: recursion,
                                         values: [],
-                                    } as StackRule;
-
-                                    return data;
+                                    } as SimpleRule;
                                 }
-                            } else {
                                 return {
                                     ruleType: RuleType.SIMPLE,
                                     tokenType: AnyToken,
