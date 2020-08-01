@@ -53,82 +53,77 @@ export function parse(fileContent: string) {
 
         const currentRule = currentMachineState.rules[currentState.ruleIndex];
         currentState.ruleIndexChanged = false;
-        mainBranch: switch (currentRule.ruleType) {
-            // Main rule check.
-            case RuleType.BRANCH: {
-                branchRules: while (
-                    currentState.brachRuleIndex < currentRule.branches.length
+        mainBranch: {
+            branchRules: while (
+                currentState.brachRuleIndex < currentRule.branches.length
+            ) {
+                const branchRule =
+                    currentRule.branches[currentState.brachRuleIndex];
+                if (
+                    branchRule.tokenType === token.type ||
+                    branchRule.tokenType === AnyToken
                 ) {
-                    const branchRule =
-                        currentRule.branches[currentState.brachRuleIndex];
-                    if (
-                        branchRule.tokenType === token.type ||
-                        branchRule.tokenType === AnyToken
-                    ) {
-                        if (branchRule.ruleType === RuleType.OPTIONAL) {
-                            currentState.ruleIndex += 1;
-                            currentState.ruleIndexChanged = true;
-                            continue tokenIterable;
-                        }
-
-                        const result = handleNonBranchRules(branchRule, token);
-                        if (result.action === RuleAction.ERROR) {
-                            ++currentState.brachRuleIndex;
-                            continue branchRules;
-                        }
-                        if (result.action === RuleAction.STACK) {
-                            states.push({
-                                machineState: result.state,
-                                ruleIndex: 0,
-                                tokensRead: 0,
-                                brachRuleIndex: 0,
-                                ruleIndexChanged: false,
-                            });
-                            log(chalk.green('+'), result.state.state);
-                            if ((branchRule as StackRule).recursion === true) {
-                                // don't push for self recursion
-                                // currentState.brachRuleIndex = 0
-                                continue tokenIterable;
-                            }
-                            currentState.brachRuleIndex = 0;
-                            currentState.ruleIndex += 1;
-                            currentState.ruleIndexChanged = true;
-                            continue tokenIterable;
-                        }
-                        if (result.action === RuleAction.STAY_OR_FORWARD) {
-                            if ((branchRule as SimpleRule).recursion === true) {
-                                currentState.brachRuleIndex = 0;
-                                break mainBranch;
-                            }
-                        }
-
+                    if (branchRule.ruleType === RuleType.OPTIONAL) {
                         currentState.ruleIndex += 1;
                         currentState.ruleIndexChanged = true;
-                        currentState.brachRuleIndex = 0;
-                        break mainBranch;
+                        continue tokenIterable;
                     }
-                    ++currentState.brachRuleIndex;
-                }
 
-                throw new Error(
-                    `Unexpected token "${escape(
-                        token.value
-                    )}" of type "${TokenType[
-                        token.type
-                    ].toLowerCase()}" \n while expected ${currentRule.branches
-                        .map((e) =>
-                            [
-                                TokenType[e.tokenType],
-                                e.ruleType === RuleType.SIMPLE
-                                    ? e.value
-                                    : undefined,
-                            ]
-                                .filter((e) => e)
-                                .join()
-                        )
-                        .join(' or ')} \n  ${evaluatedString} `
-                );
+                    const result = handleNonBranchRules(branchRule, token);
+                    if (result.action === RuleAction.ERROR) {
+                        ++currentState.brachRuleIndex;
+                        continue branchRules;
+                    }
+                    if (result.action === RuleAction.STACK) {
+                        states.push({
+                            machineState: result.state,
+                            ruleIndex: 0,
+                            tokensRead: 0,
+                            brachRuleIndex: 0,
+                            ruleIndexChanged: false,
+                        });
+                        log(chalk.green('+'), result.state.state);
+                        if ((branchRule as StackRule).recursion === true) {
+                            // don't push for self recursion
+                            // currentState.brachRuleIndex = 0
+                            continue tokenIterable;
+                        }
+                        currentState.brachRuleIndex = 0;
+                        currentState.ruleIndex += 1;
+                        currentState.ruleIndexChanged = true;
+                        continue tokenIterable;
+                    }
+                    if (result.action === RuleAction.STAY_OR_FORWARD) {
+                        if ((branchRule as SimpleRule).recursion === true) {
+                            currentState.brachRuleIndex = 0;
+                            break mainBranch;
+                        }
+                    }
+
+                    currentState.ruleIndex += 1;
+                    currentState.ruleIndexChanged = true;
+                    currentState.brachRuleIndex = 0;
+                    break mainBranch;
+                }
+                ++currentState.brachRuleIndex;
             }
+
+            throw new Error(
+                `Unexpected token "${escape(token.value)}" of type "${TokenType[
+                    token.type
+                ].toLowerCase()}" \n while expected ${currentRule.branches
+                    .map((e) =>
+                        [
+                            TokenType[e.tokenType],
+                            e.ruleType === RuleType.SIMPLE
+                                ? e.value
+                                : undefined,
+                        ]
+                            .filter((e) => e)
+                            .join()
+                    )
+                    .join(' or ')} \n  ${evaluatedString} `
+            );
         }
 
         ++currentState.tokensRead;
