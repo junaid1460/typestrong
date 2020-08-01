@@ -50,6 +50,11 @@ export type OptionalRule = {
     value: '';
 };
 
+export type TrieNode = {
+    chilren: TrieNode[];
+    rule?: Rule;
+};
+
 /**
  * Evaluates token against rules provided
  */
@@ -60,6 +65,8 @@ export type BranchRule = {
     branches: Rule[];
 
     isOptional: boolean;
+
+    trie: TrieNode;
 };
 
 export type Rule = SimpleRule | StackRule | OptionalRule;
