@@ -1,7 +1,7 @@
-import { isAlpha, isNumber, popAll } from './utils';
+import { isAlpha, isNumber } from './utils';
 
 export enum TokenType {
-    NAME, // hello
+    ALPHA, // hello
     OPEN_BLOCK, // {
     CLOSE_BLOCK, // }
     NUMBER, // 23
@@ -187,7 +187,7 @@ export function* tokenize(fileContent: string): Generator<Token> {
     for (const basicToken of tokens) {
         if (basicToken.type === BasicTokenType.ALPHA) {
             yield {
-                type: TokenType.NAME,
+                type: TokenType.ALPHA,
                 value: basicToken.value,
             };
         } else if (basicToken.type === BasicTokenType.NUM) {
@@ -208,7 +208,7 @@ enum BasicTokenType {
     END,
 }
 
-function getCharType(char: string): BasicTokenType | undefined {
+function getCharType(char: string): BasicTokenType {
     const isalpha = isAlpha(char);
     const isnum = isNumber(char);
     if (isalpha) {
@@ -216,37 +216,22 @@ function getCharType(char: string): BasicTokenType | undefined {
     } else if (isnum) {
         return BasicTokenType.NUM;
     }
+    return BasicTokenType.UNKNOWN;
 }
 
 function* basicTokens(
     fileContent: string
 ): Generator<{ value: string; type: BasicTokenType }> {
-    const tokens: string[] = [];
-    let basicTokenType: BasicTokenType | undefined;
+    const token = '';
     for (const char of fileContent) {
         const currentCharType = getCharType(char);
-        if (basicTokenType !== currentCharType && tokens.length) {
-            yield {
-                value: tokens.join(''),
-                type: basicTokenType!!,
-            };
-            popAll(tokens);
-        }
-        tokens.push(char);
-        if (currentCharType == undefined) {
-            basicTokenType = BasicTokenType.UNKNOWN;
-        } else {
-            basicTokenType = currentCharType;
-        }
-    }
-    if (tokens.length) {
         yield {
-            type: basicTokenType!!,
-            value: tokens.join(''),
+            value: token,
+            type: currentCharType,
         };
     }
     yield {
-        value: '',
+        value: token,
         type: BasicTokenType.END,
     };
 }

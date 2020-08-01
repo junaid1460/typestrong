@@ -19,9 +19,9 @@ export const grammar = `
   
   @interface => interface, @sep, @variable_name , @optional_sep, {, @optional_sep , };
 
-  @const => const, @sep, @variable_name, @optional_sep, "=", @optional_sep, @value;
+  @const => const, @sep, @variable_name, @optional_sep, =, @optional_sep, @value;
 
-  @value =>  string: ";
+  @value =>  string: " || char: ' || multiline : \` || number: NUMBER || instance: ALPHA || instance: UNDERSCORE ;
   
   @struct =>  struct, 
               @sep, 
@@ -30,6 +30,9 @@ export const grammar = `
               {,
               @optional_sep || ?, 
               };
+  @string => ", @escape: \\ || * : @ ;
+
+  @escape => \\, *;
 
   @struct_contract_or_body =>  @struct_contract: implements || @optional_sep: @ || ?;
   
@@ -39,7 +42,7 @@ export const grammar = `
 
   @optional_sep =>  SPACE : @ ||  NL: @ || ?;
   
-  @variable_name => NAME || _, NAME: @ || NUMBER: @ || _ : @ || ?;
+  @variable_name => ALPHA || _, ALPHA: @ || NUMBER: @ || _ : @ || ?;
 `;
 
 export function parseGrammar() {
