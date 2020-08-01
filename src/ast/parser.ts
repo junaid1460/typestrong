@@ -120,7 +120,7 @@ export function parse(fileContent: string) {
                             [
                                 TokenType[e.tokenType],
                                 e.ruleType === RuleType.SIMPLE
-                                    ? e.values.join(', ')
+                                    ? e.value
                                     : undefined,
                             ]
                                 .filter((e) => e)
@@ -171,7 +171,7 @@ function handleNonBranchRules(
             if (
                 (rule.tokenType === AnyToken ||
                     (rule as SimpleRule).tokenType === token.type) &&
-                (rule.values.length === 0 || rule.values.includes(token.value))
+                (rule.value.length === 0 || rule.value == token.value)
             ) {
                 return {
                     action: RuleAction.STAY_OR_FORWARD,
@@ -187,7 +187,7 @@ function handleNonBranchRules(
             if (
                 (rule.tokenType === AnyToken ||
                     rule.tokenType === token.type) &&
-                (rule.values.length === 0 || rule.values.includes(token.value))
+                (rule.value.length === 0 || rule.value == token.value)
             ) {
                 return {
                     action: RuleAction.STACK,

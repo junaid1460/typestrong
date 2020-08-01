@@ -64,7 +64,7 @@ export function parseGrammar() {
                                     ruleType: RuleType.SIMPLE,
                                     tokenType: tokenType,
                                     recursion: recursion,
-                                    values: [],
+                                    value: '',
                                 } as SimpleRule;
                             } else if (token.startsWith('@')) {
                                 if (conditionalToken) {
@@ -74,7 +74,7 @@ export function parseGrammar() {
                                             stackTo: token as any,
                                             tokenType: AnyToken,
                                             recursion: recursion,
-                                            values: [],
+                                            value: '',
                                         } as StackRule;
 
                                         return data;
@@ -100,7 +100,12 @@ export function parseGrammar() {
                                             stackTo: token as any,
                                             tokenType: AnyToken,
                                             recursion: recursion,
-                                            values: [conditionalToken],
+                                            values: [
+                                                conditionalToken.replace(
+                                                    '\\*',
+                                                    '*'
+                                                ),
+                                            ],
                                         };
                                     }
                                 } else {
@@ -112,14 +117,14 @@ export function parseGrammar() {
                                         ruleType: RuleType.SIMPLE,
                                         tokenType: AnyToken,
                                         recursion: recursion,
-                                        values: [],
+                                        value: '',
                                     } as SimpleRule;
                                 }
                                 return {
                                     ruleType: RuleType.SIMPLE,
                                     tokenType: AnyToken,
                                     recursion: recursion,
-                                    values: [token],
+                                    value: token.replace('\\*', '*'),
                                 } as SimpleRule;
                             }
                         });
@@ -134,6 +139,7 @@ export function parseGrammar() {
                 }),
             };
         });
+
     const map = states.reduce((reduceTo, current) => {
         console.log(current.stateName, current.rules);
         return reduceTo.set(current.stateName, {

@@ -19,7 +19,7 @@ export type SimpleRule = {
     tokenType: TokenType | typeof AnyToken;
 
     // If list is empty then comparison won't happen, and considered and success
-    values: string[];
+    value: string;
 
     // Should stay in state or not
     recursion: boolean;
@@ -36,7 +36,7 @@ export type StackRule = {
     // State to which transition should happen
     stackTo: string;
     // If list is empty then comparison won't happen, and considered and success
-    values: string[];
+    value: string;
 
     // Should stay in state or not
     recursion: boolean;
