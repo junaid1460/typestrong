@@ -222,16 +222,15 @@ function getCharType(char: string): BasicTokenType {
 function* basicTokens(
     fileContent: string
 ): Generator<{ value: string; type: BasicTokenType }> {
-    const token = '';
     for (const char of fileContent) {
         const currentCharType = getCharType(char);
         yield {
-            value: token,
+            value: char,
             type: currentCharType,
         };
     }
     yield {
-        value: token,
+        value: '',
         type: BasicTokenType.END,
     };
 }
