@@ -10,7 +10,7 @@
             "name": "Run Lexer",
             "skipFiles": ["<node_internals>/**"],
             "program": "${workspaceFolder}/src/index.ts",
-            "args": ["./src/example.txt"],
+            "args": ["./example.txt", "./grammar.txt"],
             "outFiles": ["${workspaceFolder}/build/**/*"],
             "sourceMaps": true
         }
