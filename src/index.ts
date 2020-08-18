@@ -1,9 +1,10 @@
 import { readFileSync } from 'fs';
-import { parse } from './ast/parser';
+import { parser } from './nearly.parser';
 
 const fileContent = readFileSync(process.argv[2]).toString();
 
 console.time('Compilation');
 (async () => {
-    await console.log(parse(fileContent));
+    parser.feed(fileContent);
+    console.log(parser.results);
 })().then(() => console.timeEnd('Compilation'));
