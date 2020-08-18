@@ -1,13 +1,13 @@
 
 
 
-struct Node implements NodeLike {
+contract Node {
 
 }
 
 
 
-const node: immutable Node =  {}
+const node: Node =  {}
 
 
 function name (value: string) {
