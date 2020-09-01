@@ -10,31 +10,64 @@
       number:  /0|[1-9][0-9]*/,
       variable: /[a-zA-Z_]+[a-zA-Z_0-9]*/,
       string:  /"(?:\\["\\]|[^\n"\\])*"/,
-      keyword: ['while', 'if', 'else', 'contract', '{', '}'],
+      keyword: [
+          'while', 
+          'if', 
+          'else', 
+          'contract', 
+          '{', 
+          '}', 
+          ':',
+          '=',
+          '(',
+          ')',
+          "."
+          ],
     })
-    
+
 %}
 
+@preprocessor typescript
 @lexer lexer
 
 statements -> function statements | declaration statements | contract statements | %WS statements
 
-contract ->  "contract" %WS:* name %WS:* "{" %WS:* type_declaration:* %WS:* "}"
+_ -> %WS:*
+__ -> %WS:+
 
-declaration ->  "const" %WS:* const_declaration_body | "let" %WS:* let_declaration_body
+contract ->  "contract" _ name _ "{" _ type_declaration:* _ "}"
 
-const_declaration_body -> name _ ":" _ name _ "=" | name _  "="
+declaration ->  "const" _ const_declaration_body | "let" _ let_declaration_body
 
-let_declaration_body -> name _ ":" _ name _ "=" | name _  "=" | name _ ":" _ name
+const_declaration_body -> name _ ":" _ name _ "="  _  value | name _  "="  _  value
 
-field_type -> ":" %WS:* name
+let_declaration_body -> name _ ":" _ name _ "="  _  value | name _  "="  _  value | name _ ":" _ name
 
-function ->  "function" %WS:+ name %WS:* "(" %WS:* type_declaration %WS:* ")" %WS:* "{" %WS:* statements %WS:* "}"
+field_type -> ":" _ name
 
-type_declaration -> name %WS:* ":" %WS:* name | name %WS:* ":" %WS:* name %WS:* "," type_declaration
 
-ws -> [\ \t]:+
+function ->  "function" __ name _ "(" _ type_declaration _ ")" _ "{" _ statements:? _ "}"
 
-ows -> [\ \t]:*
+type_declaration -> name _ ":" _ name | name _ ":" _ name _ "," type_declaration
 
 name -> %variable
+
+value -> map | list | number | string
+
+number -> %number | %number "." %number
+
+string -> %string
+
+map ->  "{"  keyvalue_pair_list:?  "}"
+
+keyvalue_pair ->  string _  ":" _ value
+
+keyvalue_pair_list -> keyvalue_pair next_pair:?
+
+next_pair -> "," _  keyvalue_pair_list 
+
+list ->  "[" _  list_values _  "]"
+
+list_values ->  value next_value:?
+
+next_value -> "," _  list_values

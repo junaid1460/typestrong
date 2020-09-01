@@ -7,7 +7,7 @@ contract Node {
 
 
 
-const node: Node =  {}
+const node : Node =  {}
 
 
 function name (value: string) {

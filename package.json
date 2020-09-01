@@ -5,7 +5,7 @@
     "main": "src/index.ts",
     "scripts": {
         "test": "echo \"Error: no test specified\" && exit 1",
-        "build": "nearleyc grammar.ne -o src/grammar.compiled.js",
+        "build": "nearleyc grammar.ne -o src/grammar.compiled.ts",
         "postbuild": "prettier ./src/** --write",
         "build:watch": "nodemon --watch grammar.ne --exec \"npm run build\""
     },
