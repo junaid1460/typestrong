@@ -65,5 +65,7 @@
         "sourceMap": true,
         "downlevelIteration": true,
         "allowJs": true
-    }
+    },
+    "exclude": ["node_modules", "doc", "build", ".vscode", "example.ts"],
+    "include": ["src"]
 }

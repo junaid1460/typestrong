@@ -1,15 +1,52 @@
 
+type Node = {
+    a: int 
+    name: string = "100"
+    names = () => {
+    
+    }
+}
 
+type Node2 = {
+    name: string = "100"
+    c: boolean
+    a: int 
+    names = () => {
+    
 
-contract Node {
+    }
+}
+
+type T = {
+    name: string
+    x: number
+}
+
+let      fs = () => {
 
 }
 
+let value = {
+    name: 23,
+}
 
+f(values={ name: 23, 30})
 
-const node : Node =  {}
+test = () => {
+    f(new Node)
+    f(new Node2)
+    return Node[]()
+}
 
+node = new Node;
 
-function name (value: string) {
+name = (value: string) =>{
+    node = new Node;
+}
 
+let name: string = "junaid"
+let value =  "name" 
+
+hello = (name: string) => {
+    
 }

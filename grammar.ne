@@ -5,7 +5,8 @@
     const moo = require("moo");
 
     let lexer = moo.compile({
-      WS:{match: /[ \t\n]+/, lineBreaks: true},
+      ws:{match: /[ \t]+/},
+      nl:{match: /[\n]+/, lineBreaks: true},
       comment: /\/\/.*?$/,
       number:  /0|[1-9][0-9]*/,
       variable: /[a-zA-Z_]+[a-zA-Z_0-9]*/,
@@ -15,13 +16,19 @@
           'if', 
           'else', 
           'contract', 
+          'type',
+          'let',
+          'return',
           '{', 
           '}', 
           ':',
           '=',
           '(',
           ')',
-          "."
+          ".",
+          ';',
+          ',',
+          '>'
           ],
     })
 
@@ -30,44 +37,41 @@
 @preprocessor typescript
 @lexer lexer
 
-statements -> function statements | declaration statements | contract statements | %WS statements
+file ->  statements:* 
 
-_ -> %WS:*
-__ -> %WS:+
+_ -> %ws:*
 
-contract ->  "contract" _ name _ "{" _ type_declaration:* _ "}"
+__ -> %ws:+
 
-declaration ->  "const" _ const_declaration_body | "let" _ let_declaration_body
+___ -> %nl 
 
-const_declaration_body -> name _ ":" _ name _ "="  _  value | name _  "="  _  value
+ws -> %ws
 
-let_declaration_body -> name _ ":" _ name _ "="  _  value | name _  "="  _  value | name _ ":" _ name
+statements -> type  | declaration | assignment | call | return | ___ | ws
 
-field_type -> ":" _ name
+declaration -> "let" __ varName _ type_member_init:? _ ___
 
+assignment -> varName _ type_member_init _ ___
 
-function ->  "function" __ name _ "(" _ type_declaration _ ")" _ "{" _ statements:? _ "}"
+call -> varName _ "(" _ ")" _ ___
 
-type_declaration -> name _ ":" _ name | name _ ":" _ name _ "," type_declaration
+return -> "return" _ ___
 
-name -> %variable
+type ->  "type" _ varName _  "=" _ type_value
 
-value -> map | list | number | string
+type_value -> "{" _ ___ type_member:* _ "}"
 
-number -> %number | %number "." %number
+type_member -> _ varName _ ":" _ varName _ type_member_init:? ___ | _ varName _ type_member_init ___
+
+type_member_init -> "=" _ value
+
+varName -> %variable
 
 string -> %string
 
-map ->  "{"  keyvalue_pair_list:?  "}"
+number -> %number
 
-keyvalue_pair ->  string _  ":" _ value
+value -> varName | string | number | number "." number | function
 
-keyvalue_pair_list -> keyvalue_pair next_pair:?
+function ->  "(" _ ")" _ "=" ">" _ "{" _ ___ statements:* "}"
 
-next_pair -> "," _  keyvalue_pair_list 
-
-list ->  "[" _  list_values _  "]"
-
-list_values ->  value next_value:?
-
-next_value -> "," _  list_values

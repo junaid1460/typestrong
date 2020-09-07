@@ -8,4 +8,7 @@
     },
     "editor.defaultFormatter": "esbenp.prettier-vscode",
     "typescript.format.enable": true,
+    "files.watcherExclude": {
+        "**/target": true
+    },
 }

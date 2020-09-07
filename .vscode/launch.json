@@ -10,7 +10,7 @@
             "name": "Run Lexer",
             "skipFiles": ["<node_internals>/**"],
             "program": "${workspaceFolder}/src/index.ts",
-            "args": ["./example.txt", "./grammar.txt"],
+            "args": ["./example.txt", "./grammar.ne"],
             "outFiles": ["${workspaceFolder}/build/**/*"],
             "runtimeExecutable": "/Users/mj/.nvm/versions/node/v12.16.1/bin/node",
             "sourceMaps": true
